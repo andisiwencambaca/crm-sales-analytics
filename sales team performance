@@ -1,0 +1,28 @@
+WITH agent_performance AS (
+    SELECT
+        st.sales_agent,
+        manager,
+        regional_office,
+        COUNT(sp.opportunity_id) AS total_deals,
+        SUM(close_value) AS total_sales_value,
+        COUNT(CASE WHEN deal_stage = 'Won' THEN 1 END) AS deals_won,
+        AVG(close_date - engage_date) AS avg_sales_cycle_duration -- Calculate in days
+    FROM
+        sales_pipeline as sp
+    JOIN
+        sales_team as st ON sp.sales_agent = st.sales_agent
+    GROUP BY
+        st.sales_agent, manager, regional_office
+)
+SELECT
+    sales_agent,
+    manager,
+    regional_office,
+    total_deals,
+    total_sales_value,
+    deals_won,
+    ROUND(avg_sales_cycle_duration, 2) AS avg_sales_cycle_duration_days
+FROM
+    agent_performance
+ORDER BY
+    total_sales_value DESC;
