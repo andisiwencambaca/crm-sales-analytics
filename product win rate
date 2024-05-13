@@ -1,0 +1,15 @@
+SELECT
+    product_name,
+    COUNT(*) AS total_deals,
+    SUM(CASE WHEN deal_stage = 'Won' THEN 1 ELSE 0 END) AS deals_won,
+    CASE WHEN COUNT(*) > 0 THEN
+        (SUM(CASE WHEN deal_stage = 'Won' THEN 1 ELSE 0 END) * 100.0) / COUNT(*)
+    ELSE
+        0
+    END AS win_rate
+FROM
+    sales_pipeline
+GROUP BY
+    product_name
+ORDER BY
+    win_rate DESC;
