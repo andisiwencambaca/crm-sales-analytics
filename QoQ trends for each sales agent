@@ -1,0 +1,22 @@
+WITH sales_by_quarter AS (
+  SELECT 
+    EXTRACT(YEAR FROM close_date) AS year,
+    EXTRACT(QUARTER FROM close_date) AS quarter,
+    sales_agent,
+    SUM(CASE WHEN deal_stage = 'won' THEN close_value ELSE 0 END) AS total_sales,
+    LAG(SUM(CASE WHEN deal_stage = 'won' THEN close_value ELSE 0 END)) OVER (PARTITION BY sales_agent ORDER BY EXTRACT(YEAR FROM close_date), EXTRACT(QUARTER FROM close_date)) AS prev_quarter_sales
+  FROM sales_pipeline
+  WHERE deal_stage IN ('won', 'lost')
+  GROUP BY EXTRACT(YEAR FROM close_date), EXTRACT(QUARTER FROM close_date), sales_agent
+)
+SELECT 
+  sq.year,
+  sq.quarter,
+  sq.sales_agent,
+  sq.total_sales,
+  sq.prev_quarter_sales,
+  CASE 
+    WHEN sq.prev_quarter_sales IS NULL OR sq.prev_quarter_sales = 0 THEN NULL
+    ELSE ((sq.total_sales - sq.prev_quarter_sales) / sq.prev_quarter_sales) * 100 
+  END AS growth_rate
+FROM sales_by_quarter sq;
