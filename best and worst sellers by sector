@@ -1,0 +1,31 @@
+WITH product_sales_rank AS (
+    SELECT
+        a.sector,
+        sp.product_name,
+        SUM(sp.close_value) AS total_sold_price,
+        ROW_NUMBER() OVER (PARTITION BY a.sector ORDER BY SUM(sp.close_value) DESC) AS sales_desc,
+        ROW_NUMBER() OVER (PARTITION BY a.sector ORDER BY SUM(sp.close_value) ASC) AS sales_asc
+    FROM
+        accounts AS a
+    JOIN
+        sales_pipeline AS sp ON a.account_name = sp.account_name
+    GROUP BY
+        a.sector,
+        sp.product_name
+)
+SELECT
+    sector,
+    product_name,
+    total_sold_price,
+    CASE
+        WHEN sales_desc = 1 THEN 'Best Selling'
+        WHEN sales_asc = 1 THEN 'Worst Selling'
+        ELSE 'Other'
+    END AS sales_rank_category
+FROM
+    product_sales_rank
+WHERE
+    sales_desc = 1 OR sales_asc = 1
+ORDER BY
+    sector,
+    CASE WHEN sales_desc = 1 THEN total_sold_price ELSE -total_sold_price END DESC;
